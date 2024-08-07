@@ -2,5 +2,5 @@
 	export let data;
 </script>
 
-<h1>Welcome to Forums</h1>
+<h1>forums-tenant</h1>
 <p>{data.hostname}</p>
