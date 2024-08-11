@@ -1,10 +1,10 @@
-import { lucia } from '$lib/server/auth';
 import { fail, redirect } from '@sveltejs/kit';
 import { verify } from '@node-rs/argon2';
-import { db } from '$lib/server/db';
 
 import type { Actions, PageServerLoad } from './$types';
 import { eq } from 'drizzle-orm';
+import { createDB } from '$lib/server/db';
+import { createLucia } from '$lib/server/auth';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -35,6 +35,8 @@ export const actions: Actions = {
 			});
 		}
 
+		const db = await createDB(event.url.hostname);
+
 		const existingUser = await db.query.userTable.findFirst({
 			where: (user) => eq(user.username, username)
 		});
@@ -64,6 +66,8 @@ export const actions: Actions = {
 				message: 'Incorrect username or password'
 			});
 		}
+
+		const lucia = createLucia(db);
 
 		const session = await lucia.createSession(existingUser.id, {});
 		const sessionCookie = lucia.createSessionCookie(session.id);

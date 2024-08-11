@@ -1,11 +1,11 @@
-import { lucia } from '$lib/server/auth';
 import { fail, redirect } from '@sveltejs/kit';
 import { generateId } from 'lucia';
 import { hash } from '@node-rs/argon2';
-import { db } from '$lib/server/db';
 
 import type { Actions, PageServerLoad } from './$types';
 import { userTable } from '$lib/server/db/schema';
+import { createDB } from '$lib/server/db';
+import { createLucia } from '$lib/server/auth';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -45,8 +45,10 @@ export const actions: Actions = {
 		const userId = generateId(15);
 
 		try {
+			const db = await createDB(event.url.hostname);
 			await db.insert(userTable).values({ id: userId, username, password_hash: passwordHash });
 
+			const lucia = createLucia(db);
 			const session = await lucia.createSession(userId, {});
 			const sessionCookie = lucia.createSessionCookie(session.id);
 			event.cookies.set(sessionCookie.name, sessionCookie.value, {

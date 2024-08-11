@@ -1,28 +1,34 @@
 import { DrizzleSQLiteAdapter } from '@lucia-auth/adapter-drizzle';
-import { db } from './db';
+
 import { sessionTable, userTable, type DatabaseUser } from './db/schema';
 import { Lucia } from 'lucia';
 import { dev } from '$app/environment';
+import { createDB } from './db';
 
-// @ts-expect-error lucia's drizzle adapter has the wrong types
-export const adapter = new DrizzleSQLiteAdapter(db, sessionTable, userTable);
+export function createLucia(db: Awaited<ReturnType<typeof createDB>>) {
+	// TODO: write a custom adapter if lucia don't fix it
+	// @ts-expect-error lucia's drizzle adapter has the wrong types
+	const adapter = new DrizzleSQLiteAdapter(db, sessionTable, userTable);
 
-export const lucia = new Lucia(adapter, {
-	sessionCookie: {
-		attributes: {
-			secure: !dev
+	const lucia = new Lucia(adapter, {
+		sessionCookie: {
+			attributes: {
+				secure: !dev
+			}
+		},
+		getUserAttributes: (attributes) => {
+			return {
+				username: attributes.username
+			};
 		}
-	},
-	getUserAttributes: (attributes) => {
-		return {
-			username: attributes.username
-		};
-	}
-});
+	});
+
+	return lucia;
+}
 
 declare module 'lucia' {
 	interface Register {
-		Lucia: typeof lucia;
+		Lucia: ReturnType<typeof createLucia>;
 		DatabaseUserAttributes: Omit<DatabaseUser, 'id'>;
 	}
 }
