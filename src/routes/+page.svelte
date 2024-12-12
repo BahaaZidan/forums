@@ -2,7 +2,11 @@
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 </script>
 
 <h1>forums-tenant</h1>
